@@ -95,6 +95,3 @@ Pattern: component-based MVVM-style UI. Razor pages are views, services hold sta
 5. Methodology and screens (mockups)
 6. Live demo: home, donate, apply, dashboard, Dari mode, dark mode
 7. Tests, challenges, future work (real API, Identity, payments)
-
-## 10. Known limits
-Sign-in, payments and data are demo-only and live in the browser. A production version needs a server API, ASP.NET Core Identity and a payment provider.
