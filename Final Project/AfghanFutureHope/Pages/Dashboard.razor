@@ -1,0 +1,249 @@
+@page "/dashboard"
+@inject IDataService Data
+@inject AppState State
+@inject NavigationManager Nav
+@inject ToastService Toasts
+
+<PageTitle>Dashboard | Afghan Future Hope Platform</PageTitle>
+
+@if (State.User is null)
+{
+    <section class="container narrow center empty-state">
+        <h1>Please sign in</h1>
+        <p class="muted">The dashboard is only for signed-in users.</p>
+        <a class="btn btn-primary" href="login">Go to sign in</a>
+    </section>
+}
+else if (State.IsAdmin)
+{
+    <section class="page-head">
+        <div class="container">
+            <h1>Admin dashboard</h1>
+            <p class="lead">Signed in as @State.User.DisplayName. Manage initiatives and review activity.</p>
+        </div>
+    </section>
+
+    <section class="container stats" aria-label="Totals">
+        <StatCard Icon="💛" Value="@("$" + Data.TotalRaised.ToString("N0"))" Label="total raised" />
+        <StatCard Icon="🧾" Value="@Data.Donations.Count.ToString()" Label="gifts recorded" />
+        <StatCard Icon="📨" Value="@Data.Applications.Count.ToString()" Label="applications" />
+        <StatCard Icon="🏫" Value="@Data.Initiatives.Count.ToString()" Label="initiatives" />
+    </section>
+
+    <section class="container section two-col">
+        <article class="panel">
+            <h2>Funds raised by cause</h2>
+            <div class="bars" role="img" aria-label="Bar chart of funds raised by cause">
+                @foreach (var row in ByCategory)
+                {
+                    <div class="bar-col">
+                        <span class="bar-val">$@row.Total.ToString("N0")</span>
+                        <div class="bar" style="height:@(row.Height)%"></div>
+                        <span class="bar-name">@row.Name</span>
+                    </div>
+                }
+            </div>
+        </article>
+
+        <aside class="panel">
+            <h2>Add an initiative</h2>
+            <EditForm Model="_form" OnValidSubmit="Add" FormName="add-initiative">
+                <DataAnnotationsValidator />
+                <div class="field">
+                    <label for="n-title">Title</label>
+                    <InputText id="n-title" class="input" @bind-Value="_form.Title" />
+                    <ValidationMessage For="() => _form.Title" />
+                </div>
+                <div class="field">
+                    <label for="n-sum">Short summary</label>
+                    <InputText id="n-sum" class="input" @bind-Value="_form.Summary" />
+                    <ValidationMessage For="() => _form.Summary" />
+                </div>
+                <div class="field">
+                    <label for="n-prov">Province</label>
+                    <InputText id="n-prov" class="input" @bind-Value="_form.Province" />
+                    <ValidationMessage For="() => _form.Province" />
+                </div>
+                <div class="field">
+                    <label for="n-cat">Cause</label>
+                    <InputSelect id="n-cat" class="input" @bind-Value="_form.Category">
+                        @foreach (var c in Enum.GetValues<Category>())
+                        {
+                            <option value="@c">@c</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="field">
+                    <label for="n-goal">Funding goal (USD)</label>
+                    <InputNumber id="n-goal" class="input" @bind-Value="_form.Goal" />
+                    <ValidationMessage For="() => _form.Goal" />
+                </div>
+                <div class="field">
+                    <label for="n-ben">People helped</label>
+                    <InputNumber id="n-ben" class="input" @bind-Value="_form.Beneficiaries" />
+                    <ValidationMessage For="() => _form.Beneficiaries" />
+                </div>
+                <button type="submit" class="btn btn-primary block">Add initiative</button>
+            </EditForm>
+        </aside>
+    </section>
+
+    <section class="container section">
+        <h2>Manage initiatives</h2>
+        <div class="table-wrap">
+            <table>
+                <caption class="sr-only">Initiatives</caption>
+                <thead><tr><th scope="col">Title</th><th scope="col">Cause</th><th scope="col">Province</th><th scope="col">Progress</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+                <tbody>
+                @foreach (var i in Data.Initiatives)
+                {
+                    <tr>
+                        <td><a href="initiatives/@i.Id">@i.Title</a></td>
+                        <td>@i.Category</td>
+                        <td>@i.Province</td>
+                        <td>@i.Percent%</td>
+                        <td><button type="button" class="btn btn-danger small" @onclick="() => _toDelete = i">Delete</button></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+
+        <h2>Latest gifts</h2>
+        <div class="table-wrap">
+            <table>
+                <caption class="sr-only">Latest gifts</caption>
+                <thead><tr><th scope="col">Date</th><th scope="col">Donor</th><th scope="col">Initiative</th><th scope="col">Amount</th></tr></thead>
+                <tbody>
+                @foreach (var d in Data.Donations.OrderByDescending(x => x.Date).Take(10))
+                {
+                    <tr>
+                        <td>@d.Date.ToString("d MMM yyyy")</td>
+                        <td>@d.Donor</td>
+                        <td>@(Data.GetInitiative(d.InitiativeId)?.Title ?? "Removed initiative")</td>
+                        <td>$@d.Amount</td>
+                    </tr>
+                }
+                @if (!Data.Donations.Any())
+                {
+                    <tr><td colspan="4" class="muted">No gifts yet. Gifts made on initiative pages appear here.</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+
+        <h2>Applications received</h2>
+        <div class="table-wrap">
+            <table>
+                <caption class="sr-only">Applications</caption>
+                <thead><tr><th scope="col">Date</th><th scope="col">Applicant</th><th scope="col">Email</th><th scope="col">Opportunity</th></tr></thead>
+                <tbody>
+                @foreach (var a in Data.Applications.OrderByDescending(x => x.Date).Take(10))
+                {
+                    <tr>
+                        <td>@a.Date.ToString("d MMM yyyy")</td>
+                        <td>@a.Name</td>
+                        <td>@a.Email</td>
+                        <td>@(Data.Opportunities.FirstOrDefault(o => o.Id == a.OpportunityId)?.Title ?? "Unknown")</td>
+                    </tr>
+                }
+                @if (!Data.Applications.Any())
+                {
+                    <tr><td colspan="4" class="muted">No applications yet.</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <Modal Open="_toDelete is not null" Title="Delete initiative?" OnClose="() => _toDelete = null">
+        <p>This removes <strong>@_toDelete?.Title</strong> from the platform. This cannot be undone.</p>
+        <div class="row end">
+            <button type="button" class="btn btn-ghost" @onclick="() => _toDelete = null">Keep it</button>
+            <button type="button" class="btn btn-danger" @onclick="ConfirmDelete">Delete initiative</button>
+        </div>
+    </Modal>
+}
+else
+{
+    <section class="page-head">
+        <div class="container">
+            <h1>My dashboard</h1>
+            <p class="lead">Welcome, @State.User.DisplayName. Here is everything you have sent through the platform.</p>
+        </div>
+    </section>
+
+    <section class="container section two-col">
+        <article class="panel">
+            <h2>My applications</h2>
+            <TemplatedList Items="MyApplications" CssClass="supporters">
+                <ItemTemplate Context="a">
+                    <div class="supporter">
+                        <strong>@(Data.Opportunities.FirstOrDefault(o => o.Id == a.OpportunityId)?.Title ?? "Opportunity")</strong>
+                        <p class="muted">Sent @a.Date.ToString("d MMM yyyy")</p>
+                    </div>
+                </ItemTemplate>
+                <Empty><p class="muted">You have not applied yet.</p><a class="btn btn-primary" href="opportunities">Browse opportunities</a></Empty>
+            </TemplatedList>
+        </article>
+        <article class="panel">
+            <h2>My gifts</h2>
+            <TemplatedList Items="MyDonations" CssClass="supporters">
+                <ItemTemplate Context="d">
+                    <div class="supporter">
+                        <strong>$@d.Amount</strong> to @(Data.GetInitiative(d.InitiativeId)?.Title ?? "a removed initiative")
+                        <p class="muted">@d.Date.ToString("d MMM yyyy")</p>
+                    </div>
+                </ItemTemplate>
+                <Empty><p class="muted">You have not given yet.</p><a class="btn btn-primary" href="initiatives">Find an initiative</a></Empty>
+            </TemplatedList>
+        </article>
+    </section>
+}
+
+@code {
+    private InitiativeForm _form = new();
+    private Initiative? _toDelete;
+
+    private record CategoryRow(string Name, int Total, int Height);
+
+    private List<CategoryRow> ByCategory
+    {
+        get
+        {
+            var totals = Enum.GetValues<Category>()
+                .Select(c => (Name: c.ToString(), Total: Data.Initiatives.Where(i => i.Category == c).Sum(i => i.Raised)))
+                .ToList();
+            var max = Math.Max(1, totals.Max(t => t.Total));
+            return totals.Select(t => new CategoryRow(t.Name, t.Total, Math.Max(4, (int)(t.Total * 100.0 / max)))).ToList();
+        }
+    }
+
+    private IEnumerable<JobApplication> MyApplications =>
+        Data.Applications.Where(a => a.SubmittedBy == State.User?.Username).OrderByDescending(a => a.Date);
+
+    private IEnumerable<Donation> MyDonations =>
+        Data.Donations.Where(d => d.SubmittedBy == State.User?.Username).OrderByDescending(d => d.Date);
+
+    private async Task Add()
+    {
+        var created = await Data.AddInitiativeAsync(_form);
+        Toasts.Show($"Added \"{created.Title}\".");
+        _form = new InitiativeForm();
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (_toDelete is null) return;
+        try
+        {
+            await Data.DeleteInitiativeAsync(_toDelete.Id);
+            Toasts.Show("Initiative deleted.");
+        }
+        catch (KeyNotFoundException)
+        {
+            Toasts.Show("That initiative was already removed.", ToastKind.Error);
+        }
+        _toDelete = null;
+    }
+}

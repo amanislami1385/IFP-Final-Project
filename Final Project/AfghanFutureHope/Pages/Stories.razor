@@ -1,0 +1,23 @@
+@page "/stories"
+@inject IDataService Data
+
+<PageTitle>Stories | Afghan Future Hope Platform</PageTitle>
+
+<section class="page-head">
+    <div class="container">
+        <h1>Stories</h1>
+        <p class="lead">What changes when a student gets a laptop, a village gets a clinic, or a farmer gets a fair price.</p>
+        <p class="muted fine">Sample stories written for this demo.</p>
+    </div>
+</section>
+
+<section class="container section">
+    <TemplatedList Items="Data.Stories" CssClass="grid quotes">
+        <ItemTemplate Context="s">
+            <blockquote class="quote big">
+                <p>@s.Quote</p>
+                <footer><strong>@s.Name</strong>, @s.Role in @s.Province</footer>
+            </blockquote>
+        </ItemTemplate>
+    </TemplatedList>
+</section>

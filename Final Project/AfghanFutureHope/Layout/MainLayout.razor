@@ -1,0 +1,126 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject AppState State
+@inject IDataService Data
+@inject AuthService Auth
+@inject NavigationManager Nav
+
+<CascadingValue Value="State">
+    <a class="skip" href="@(Nav.Uri.Split('#')[0])#main">Skip to content</a>
+
+    <header class="site-header">
+        <div class="container nav">
+            <a class="brand" href="" aria-label="Afghan Future Hope Platform, home">
+                <span class="logo" aria-hidden="true"></span>
+                <span class="brand-text"><strong>Afghan Future</strong> Hope</span>
+            </a>
+
+            <button type="button" class="icon-btn menu-btn" aria-label="Toggle menu"
+                    aria-expanded="@(_menuOpen ? "true" : "false")" @onclick="() => _menuOpen = !_menuOpen">☰</button>
+
+            <nav class="@(_menuOpen ? "open" : "")" aria-label="Main">
+                <NavLink href="" Match="NavLinkMatch.All" @onclick="CloseMenu">@State.T("nav.home")</NavLink>
+                <NavLink href="initiatives" @onclick="CloseMenu">@State.T("nav.initiatives")</NavLink>
+                <NavLink href="opportunities" @onclick="CloseMenu">@State.T("nav.opportunities")</NavLink>
+                <NavLink href="stories" @onclick="CloseMenu">@State.T("nav.stories")</NavLink>
+                <NavLink href="about" @onclick="CloseMenu">@State.T("nav.about")</NavLink>
+                @if (State.IsSignedIn)
+                {
+                    <NavLink href="dashboard" @onclick="CloseMenu">@State.T("nav.dashboard")</NavLink>
+                    <button type="button" class="link-btn" @onclick="SignOut">@State.T("nav.logout")</button>
+                }
+                else
+                {
+                    <NavLink class="nav-cta" href="login" @onclick="CloseMenu">@State.T("nav.login")</NavLink>
+                }
+                <ThemeLangSwitcher />
+            </nav>
+        </div>
+    </header>
+
+    <main id="main" tabindex="-1">
+        @if (!_ready)
+        {
+            <div class="boot" aria-label="Loading"><div class="spinner"></div></div>
+        }
+        else
+        {
+            <ErrorBoundary @ref="_boundary">
+                <ChildContent>@Body</ChildContent>
+                <ErrorContent>
+                    <section class="container narrow center empty-state">
+                        <h1>Something went wrong</h1>
+                        <p class="muted">The page could not be shown. Your saved data is safe. Try again or return home.</p>
+                        <div class="row center-row">
+                            <button type="button" class="btn btn-primary" @onclick="() => _boundary?.Recover()">Try again</button>
+                            <a class="btn btn-ghost" href="">Back to home</a>
+                        </div>
+                    </section>
+                </ErrorContent>
+            </ErrorBoundary>
+        }
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-grid">
+            <div>
+                <p class="brand-text"><strong>Afghan Future</strong> Hope Platform</p>
+                <p class="muted">Education, health and work for the next generation.</p>
+            </div>
+            <div>
+                <p><strong>Explore</strong></p>
+                <a href="initiatives">Initiatives</a>
+                <a href="opportunities">Opportunities</a>
+                <a href="stories">Stories</a>
+            </div>
+            <div>
+                <p><strong>Platform</strong></p>
+                <a href="about">About and contact</a>
+                <a href="login">Sign in</a>
+            </div>
+        </div>
+        <p class="container muted fine">Demo project built with Blazor WebAssembly. All initiatives, people and figures are sample data.</p>
+    </footer>
+
+    <ToastHost />
+</CascadingValue>
+
+@code {
+    private bool _ready;
+    private bool _menuOpen;
+    private ErrorBoundary? _boundary;
+
+    protected override async Task OnInitializedAsync()
+    {
+        State.Changed += OnChanged;
+        Data.Changed += OnChanged;
+        Nav.LocationChanged += OnLocationChanged;
+        await State.InitAsync();
+        await Data.InitAsync();
+        _ready = true;
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _boundary?.Recover();
+        _menuOpen = false;
+    }
+
+    private void CloseMenu() => _menuOpen = false;
+
+    private async Task SignOut()
+    {
+        await Auth.SignOutAsync();
+        _menuOpen = false;
+        Nav.NavigateTo("");
+    }
+
+    public void Dispose()
+    {
+        State.Changed -= OnChanged;
+        Data.Changed -= OnChanged;
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}

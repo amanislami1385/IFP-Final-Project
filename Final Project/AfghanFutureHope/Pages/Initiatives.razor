@@ -1,0 +1,90 @@
+@page "/initiatives"
+@inject IDataService Data
+@inject NavigationManager Nav
+
+<PageTitle>Initiatives | Afghan Future Hope Platform</PageTitle>
+
+<section class="page-head">
+    <div class="container">
+        <h1>Initiatives</h1>
+        <p class="lead">Find a cause close to your heart. Every project lists its goal, location and the people it helps.</p>
+    </div>
+</section>
+
+<section class="container section">
+    <div class="toolbar" role="search">
+        <div class="field grow">
+            <label for="q">Search</label>
+            <input id="q" type="search" class="input" placeholder="Title, province or keyword"
+                   @bind="Search" @bind:event="oninput" />
+        </div>
+        <div class="field">
+            <label for="cat">Cause</label>
+            <select id="cat" class="input" @bind="CategoryFilter">
+                <option value="">All causes</option>
+                @foreach (var c in Enum.GetValues<Category>())
+                {
+                    <option value="@c">@c</option>
+                }
+            </select>
+        </div>
+        <div class="field">
+            <label for="sort">Sort by</label>
+            <select id="sort" class="input" @bind="Sort">
+                <option value="progress">Closest to goal</option>
+                <option value="raised">Most raised</option>
+                <option value="needed">Most needed</option>
+                <option value="name">Name</option>
+            </select>
+        </div>
+    </div>
+
+    <p class="muted" aria-live="polite">Showing @Filtered.Count of @Data.Initiatives.Count initiatives</p>
+
+    <TemplatedList Items="Filtered">
+        <ItemTemplate Context="item">
+            <InitiativeCard Item="item" OnSupport="GoToSupport" />
+        </ItemTemplate>
+        <Empty>
+            <div class="empty-state center">
+                <h2>No initiatives match</h2>
+                <p class="muted">Try a different word or clear the cause filter.</p>
+                <button type="button" class="btn btn-primary" @onclick="Reset">Clear filters</button>
+            </div>
+        </Empty>
+    </TemplatedList>
+</section>
+
+@code {
+    private string Search { get; set; } = "";
+    private string CategoryFilter { get; set; } = "";
+    private string Sort { get; set; } = "progress";
+
+    private List<Initiative> Filtered
+    {
+        get
+        {
+            var q = Data.Initiatives.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(Search))
+            {
+                var s = Search.Trim();
+                q = q.Where(i => i.Title.Contains(s, StringComparison.OrdinalIgnoreCase)
+                              || i.Summary.Contains(s, StringComparison.OrdinalIgnoreCase)
+                              || i.Province.Contains(s, StringComparison.OrdinalIgnoreCase));
+            }
+            if (Enum.TryParse<Category>(CategoryFilter, out var cat))
+                q = q.Where(i => i.Category == cat);
+
+            return (Sort switch
+            {
+                "raised" => q.OrderByDescending(i => i.Raised),
+                "needed" => q.OrderByDescending(i => i.Goal - i.Raised),
+                "name" => q.OrderBy(i => i.Title),
+                _ => q.OrderByDescending(i => i.Percent)
+            }).ToList();
+        }
+    }
+
+    private void Reset() { Search = ""; CategoryFilter = ""; Sort = "progress"; }
+    private void GoToSupport(Initiative item) => Nav.NavigateTo($"initiatives/{item.Id}#donate");
+}

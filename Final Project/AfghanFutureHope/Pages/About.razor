@@ -1,0 +1,71 @@
+@page "/about"
+@inject ToastService Toasts
+
+<PageTitle>About | Afghan Future Hope Platform</PageTitle>
+
+<section class="page-head">
+    <div class="container">
+        <h1>About the platform</h1>
+        <p class="lead">A single place where support, learning and work opportunities meet young people across Afghanistan.</p>
+    </div>
+</section>
+
+<section class="container section two-col">
+    <article>
+        <h2>The problem</h2>
+        <p>Many talented young people cannot find trusted scholarships, jobs or training, and many donors cannot see where their gift goes. Information is scattered across social media posts, chat groups and word of mouth.</p>
+        <h2>Our approach</h2>
+        <p>Afghan Future Hope Platform brings initiatives, funding progress and opportunities together in one clear, multilingual site that works on any phone, tablet or computer.</p>
+        <h2>Aim and goals</h2>
+        <ul class="ticks">
+            <li>Make every initiative transparent with a clear goal and funding bar.</li>
+            <li>Help students find and apply for scholarships and jobs in minutes.</li>
+            <li>Serve people in English, Dari and Pashto, including right-to-left layout.</li>
+            <li>Give administrators a dashboard to manage initiatives and review activity.</li>
+        </ul>
+    </article>
+
+    <aside class="panel">
+        <h2>Contact us</h2>
+        <EditForm Model="_form" OnValidSubmit="Send" FormName="contact">
+            <DataAnnotationsValidator />
+            <div class="field">
+                <label for="c-name">Name</label>
+                <InputText id="c-name" class="input" @bind-Value="_form.Name" autocomplete="name" />
+                <ValidationMessage For="() => _form.Name" />
+            </div>
+            <div class="field">
+                <label for="c-email">Email</label>
+                <InputText id="c-email" type="email" class="input" @bind-Value="_form.Email" autocomplete="email" />
+                <ValidationMessage For="() => _form.Email" />
+            </div>
+            <div class="field">
+                <label for="c-msg">Message</label>
+                <InputTextArea id="c-msg" class="input" rows="4" @bind-Value="_form.Message" />
+                <ValidationMessage For="() => _form.Message" />
+            </div>
+            <button type="submit" class="btn btn-primary block">Send message</button>
+        </EditForm>
+    </aside>
+</section>
+
+<section class="band">
+    <div class="container section">
+        <h2>Technology</h2>
+        <div class="grid tech">
+            <div class="card pad"><h3>Blazor WebAssembly</h3><p>C# runs in the browser. Components, forms, routing and dependency injection come from .NET 8.</p></div>
+            <div class="card pad"><h3>Clean layers</h3><p>Pages call services through interfaces. Storage, data and sign-in can be swapped without touching the UI.</p></div>
+            <div class="card pad"><h3>Responsive and accessible</h3><p>CSS grid, media queries, keyboard focus, skip link, labels and live regions on every form.</p></div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private ContactForm _form = new();
+
+    private void Send()
+    {
+        Toasts.Show($"Thank you, {_form.Name}. Your message was sent.");
+        _form = new ContactForm();
+    }
+}

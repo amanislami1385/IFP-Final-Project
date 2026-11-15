@@ -1,0 +1,63 @@
+@page "/login"
+@inject AuthService Auth
+@inject AppState State
+@inject NavigationManager Nav
+@inject ToastService Toasts
+
+<PageTitle>Sign in | Afghan Future Hope Platform</PageTitle>
+
+<section class="container narrow section">
+    <div class="panel">
+        <h1>Sign in</h1>
+        <p class="muted">Use a demo account to try the role-based dashboard.</p>
+
+        <EditForm Model="_form" OnValidSubmit="SignIn" FormName="login">
+            <DataAnnotationsValidator />
+            @if (_error is not null)
+            {
+                <p class="errors" role="alert">@_error</p>
+            }
+            <div class="field">
+                <label for="user">Username</label>
+                <InputText id="user" class="input" @bind-Value="_form.Username" autocomplete="username" />
+                <ValidationMessage For="() => _form.Username" />
+            </div>
+            <div class="field">
+                <label for="pass">Password</label>
+                <InputText id="pass" type="password" class="input" @bind-Value="_form.Password" autocomplete="current-password" />
+                <ValidationMessage For="() => _form.Password" />
+            </div>
+            <button type="submit" class="btn btn-primary block">Sign in</button>
+        </EditForm>
+
+        <div class="demo-accounts">
+            <p><strong>Demo accounts</strong></p>
+            <p>Administrator: <code>admin</code> / <code>admin123</code></p>
+            <p>Student: <code>student</code> / <code>student123</code></p>
+        </div>
+    </div>
+</section>
+
+@code {
+    private LoginForm _form = new();
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        if (State.IsSignedIn) Nav.NavigateTo("dashboard");
+    }
+
+    private async Task SignIn()
+    {
+        if (await Auth.SignInAsync(_form.Username, _form.Password))
+        {
+            Toasts.Show($"Welcome back, {State.User?.DisplayName}.");
+            Nav.NavigateTo("dashboard");
+        }
+        else
+        {
+            _error = "Username or password is not correct. Check the demo accounts below and try again.";
+            _form.Password = "";
+        }
+    }
+}

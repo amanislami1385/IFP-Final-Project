@@ -1,0 +1,97 @@
+@page "/opportunities"
+@inject IDataService Data
+@inject AppState State
+@inject ToastService Toasts
+
+<PageTitle>Opportunities | Afghan Future Hope Platform</PageTitle>
+
+<section class="page-head">
+    <div class="container">
+        <h1>Opportunities</h1>
+        <p class="lead">Scholarships, jobs, internships and training programs from our partner network.</p>
+    </div>
+</section>
+
+<section class="container section">
+    <div class="chips" role="group" aria-label="Filter by type">
+        <button type="button" class="chip @(_type is null ? "on" : "")" @onclick="() => _type = null">All</button>
+        @foreach (var t in Enum.GetValues<OpportunityType>())
+        {
+            var type = t;
+            <button type="button" class="chip @(_type == type ? "on" : "")" @onclick="() => _type = type">@type</button>
+        }
+    </div>
+
+    <TemplatedList Items="Visible" CssClass="list">
+        <ItemTemplate Context="o">
+            <article class="card row-card">
+                <div>
+                    <span class="badge">@o.Type</span>
+                    <h3>@o.Title</h3>
+                    <p class="meta"><span>@o.Organization</span><span>📍 @o.Location</span><span>Apply by @o.Deadline.ToString("d MMM yyyy")</span></p>
+                    <p>@o.Description</p>
+                </div>
+                <button type="button" class="btn btn-primary" @onclick="() => Open(o)">Apply</button>
+            </article>
+        </ItemTemplate>
+        <Empty><p class="muted">No opportunities of this type right now. Check back soon.</p></Empty>
+    </TemplatedList>
+</section>
+
+<Modal Open="_selected is not null" Title="@($"Apply: {_selected?.Title}")" OnClose="CloseModal">
+    <EditForm Model="_form" OnValidSubmit="Submit" FormName="apply">
+        <DataAnnotationsValidator />
+        <div class="field">
+            <label for="a-name">Full name</label>
+            <InputText id="a-name" class="input" @bind-Value="_form.Name" autocomplete="name" />
+            <ValidationMessage For="() => _form.Name" />
+        </div>
+        <div class="field">
+            <label for="a-email">Email</label>
+            <InputText id="a-email" type="email" class="input" @bind-Value="_form.Email" autocomplete="email" />
+            <ValidationMessage For="() => _form.Email" />
+        </div>
+        <div class="field">
+            <label for="a-statement">Why are you a good fit?</label>
+            <InputTextArea id="a-statement" class="input" rows="5" @bind-Value="_form.Statement" />
+            <ValidationMessage For="() => _form.Statement" />
+        </div>
+        <div class="row end">
+            <button type="button" class="btn btn-ghost" @onclick="CloseModal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Send application</button>
+        </div>
+    </EditForm>
+</Modal>
+
+@code {
+    private OpportunityType? _type;
+    private Opportunity? _selected;
+    private ApplicationForm _form = new();
+
+    private IEnumerable<Opportunity> Visible =>
+        Data.Opportunities.Where(o => _type is null || o.Type == _type).OrderBy(o => o.Deadline);
+
+    private void Open(Opportunity o)
+    {
+        _selected = o;
+        _form = new ApplicationForm { Name = State.User?.DisplayName ?? "" };
+    }
+
+    private void CloseModal() => _selected = null;
+
+    private async Task Submit()
+    {
+        if (_selected is null) return;
+        try
+        {
+            await Data.ApplyAsync(_selected.Id, _form, State.User?.Username ?? "guest");
+            Toasts.Show("Application sent. We will email you with next steps.");
+            _selected = null;
+        }
+        catch (KeyNotFoundException)
+        {
+            Toasts.Show("This opportunity is no longer available.", ToastKind.Error);
+            _selected = null;
+        }
+    }
+}

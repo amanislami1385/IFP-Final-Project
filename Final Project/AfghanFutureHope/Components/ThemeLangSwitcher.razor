@@ -1,0 +1,20 @@
+<div class="switcher">
+    <label class="sr-only" for="lang">Language</label>
+    <select id="lang" class="input small" value="@State.Lang" @onchange="OnLang">
+        @foreach (var l in Localizer.Languages)
+        {
+            <option value="@l.Key">@l.Value</option>
+        }
+    </select>
+    <button type="button" class="icon-btn" @onclick="State.ToggleThemeAsync"
+            aria-label="@(State.Theme == "dark" ? "Switch to light theme" : "Switch to dark theme")">
+        @(State.Theme == "dark" ? "☀️" : "🌙")
+    </button>
+</div>
+
+@code {
+    // State arrives as a cascading value from MainLayout.
+    [CascadingParameter] public AppState State { get; set; } = default!;
+
+    private Task OnLang(ChangeEventArgs e) => State.SetLanguageAsync(e.Value?.ToString() ?? "en");
+}

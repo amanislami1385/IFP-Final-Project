@@ -1,0 +1,24 @@
+<article class="card initiative">
+    <div class="@TopClass">
+        <span class="card-icon" aria-hidden="true">@Item.Icon</span>
+        <span class="badge">@Item.Category</span>
+    </div>
+    <div class="card-body">
+        <h3><a href="initiatives/@Item.Id">@Item.Title</a></h3>
+        <p class="meta"><span>📍 @Item.Province</span><span>👥 @Item.Beneficiaries.ToString("N0") people</span></p>
+        <p>@Item.Summary</p>
+        <ProgressBar Percent="Item.Percent" Label="@($"{Item.Title} funding progress")" />
+        <p class="funding"><strong>$@Item.Raised.ToString("N0")</strong> raised of $@Item.Goal.ToString("N0") (@Item.Percent%)</p>
+        <div class="row">
+            <a class="btn btn-ghost" href="initiatives/@Item.Id">Read more</a>
+            <button type="button" class="btn btn-primary" @onclick="() => OnSupport.InvokeAsync(Item)">Support</button>
+        </div>
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public Initiative Item { get; set; } = default!;
+    [Parameter] public EventCallback<Initiative> OnSupport { get; set; }
+
+    private string TopClass => $"card-top cat-{Item.Category.ToString().ToLowerInvariant()}";
+}

@@ -1,0 +1,8 @@
+<div class="progress" role="progressbar" aria-valuenow="@Percent" aria-valuemin="0" aria-valuemax="100" aria-label="@Label">
+    <span style="width:@(Percent)%"></span>
+</div>
+
+@code {
+    [Parameter] public int Percent { get; set; }
+    [Parameter] public string Label { get; set; } = "Funding progress";
+}

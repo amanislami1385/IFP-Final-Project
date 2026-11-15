@@ -1,0 +1,133 @@
+@page "/initiatives/{Id:int}"
+@inject IDataService Data
+@inject AppState State
+@inject ToastService Toasts
+
+@if (_item is null)
+{
+    <PageTitle>Initiative not found</PageTitle>
+    <section class="container narrow center empty-state">
+        <h1>Initiative not found</h1>
+        <p class="muted">It may have been removed. Browse the current list instead.</p>
+        <a class="btn btn-primary" href="initiatives">View initiatives</a>
+    </section>
+}
+else
+{
+    <PageTitle>@_item.Title | Afghan Future Hope Platform</PageTitle>
+
+    <section class="page-head">
+        <div class="container">
+            <a class="back" href="initiatives">Back to initiatives</a>
+            <h1><span aria-hidden="true">@_item.Icon</span> @_item.Title</h1>
+            <p class="lead">@_item.Summary</p>
+        </div>
+    </section>
+
+    <section class="container detail">
+        <article>
+            <h2>About this initiative</h2>
+            <p>@_item.Description</p>
+            <dl class="facts">
+                <div><dt>Cause</dt><dd>@_item.Category</dd></div>
+                <div><dt>Province</dt><dd>@_item.Province</dd></div>
+                <div><dt>People helped</dt><dd>@_item.Beneficiaries.ToString("N0")</dd></div>
+                <div><dt>Goal</dt><dd>$@_item.Goal.ToString("N0")</dd></div>
+            </dl>
+
+            <h2>Recent supporters</h2>
+            <TemplatedList Items="_recent" CssClass="supporters">
+                <ItemTemplate Context="d">
+                    <div class="supporter">
+                        <strong>@d.Donor</strong> gave $@d.Amount
+                        @if (!string.IsNullOrWhiteSpace(d.Message))
+                        {
+                            <p class="muted">"@d.Message"</p>
+                        }
+                    </div>
+                </ItemTemplate>
+                <Empty><p class="muted">Be the first to support this initiative.</p></Empty>
+            </TemplatedList>
+        </article>
+
+        <aside class="panel" id="donate">
+            <h2>Give to this initiative</h2>
+            <ProgressBar Percent="_item.Percent" Label="Funding progress" />
+            <p class="funding"><strong>$@_item.Raised.ToString("N0")</strong> raised of $@_item.Goal.ToString("N0")</p>
+
+            <EditForm Model="_form" OnValidSubmit="Submit" FormName="donate">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="errors" />
+
+                <div class="chips" role="group" aria-label="Quick amounts">
+                    @foreach (var amount in new[] { 10, 25, 50, 100 })
+                    {
+                        <button type="button" class="chip @(_form.Amount == amount ? "on" : "")" @onclick="() => _form.Amount = amount">$@amount</button>
+                    }
+                </div>
+
+                <div class="field">
+                    <label for="amount">Amount in US dollars</label>
+                    <InputNumber id="amount" class="input" @bind-Value="_form.Amount" />
+                    <ValidationMessage For="() => _form.Amount" />
+                </div>
+                <div class="field">
+                    <label for="donor">Your name</label>
+                    <InputText id="donor" class="input" @bind-Value="_form.Donor" autocomplete="name" />
+                    <ValidationMessage For="() => _form.Donor" />
+                </div>
+                <div class="field">
+                    <label for="email">Email for your receipt</label>
+                    <InputText id="email" type="email" class="input" @bind-Value="_form.Email" autocomplete="email" />
+                    <ValidationMessage For="() => _form.Email" />
+                </div>
+                <div class="field">
+                    <label for="msg">Message (optional)</label>
+                    <InputTextArea id="msg" class="input" rows="3" @bind-Value="_form.Message" />
+                    <ValidationMessage For="() => _form.Message" />
+                </div>
+                <button type="submit" class="btn btn-primary block" disabled="@_busy">@(_busy ? "Sending..." : "Give now")</button>
+                <p class="muted fine">Demo only: no real payment is taken.</p>
+            </EditForm>
+        </aside>
+    </section>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Initiative? _item;
+    private List<Donation> _recent = new();
+    private DonationForm _form = new();
+    private bool _busy;
+
+    protected override void OnParametersSet()
+    {
+        _item = Data.GetInitiative(Id);
+        Refresh();
+    }
+
+    private void Refresh() =>
+        _recent = Data.Donations.Where(d => d.InitiativeId == Id).OrderByDescending(d => d.Date).Take(5).ToList();
+
+    private async Task Submit()
+    {
+        if (_item is null) return;
+        _busy = true;
+        try
+        {
+            await Data.DonateAsync(_item.Id, _form, State.User?.Username ?? "guest");
+            Toasts.Show($"Thank you, {_form.Donor}. Your gift of ${_form.Amount} was recorded.");
+            _form = new DonationForm();
+            Refresh();
+        }
+        catch (Exception ex) when (ex is KeyNotFoundException or ArgumentException)
+        {
+            Toasts.Show("We could not record your gift. Please check the form and try again.", ToastKind.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

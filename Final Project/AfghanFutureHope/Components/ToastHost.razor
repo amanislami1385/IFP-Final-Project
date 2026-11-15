@@ -1,0 +1,36 @@
+@implements IDisposable
+@inject ToastService Toasts
+
+<div class="toasts" role="status" aria-live="polite">
+    @foreach (var t in _items)
+    {
+        <div class="@($"toast {t.Kind.ToString().ToLowerInvariant()}")" @key="t.Id">@t.Text</div>
+    }
+</div>
+
+@code {
+    private readonly List<ToastMessage> _items = new();
+    private bool _disposed;
+
+    protected override void OnInitialized() => Toasts.OnShow += Add;
+
+    private async void Add(ToastMessage message)
+    {
+        try
+        {
+            _items.Add(message);
+            await InvokeAsync(StateHasChanged);
+            await Task.Delay(3500);
+            if (_disposed) return;
+            _items.Remove(message);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (ObjectDisposedException) { }
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        Toasts.OnShow -= Add;
+    }
+}

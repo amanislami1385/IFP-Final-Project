@@ -1,0 +1,11 @@
+<div class="stat">
+    <span class="stat-icon" aria-hidden="true">@Icon</span>
+    <strong class="stat-value">@Value</strong>
+    <span class="stat-label">@Label</span>
+</div>
+
+@code {
+    [Parameter] public string Icon { get; set; } = "";
+    [Parameter, EditorRequired] public string Value { get; set; } = "";
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+}

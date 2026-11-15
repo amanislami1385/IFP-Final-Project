@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Afghan Future Hope Platform connects donors, volunteers and young people with education, health, scholarships and jobs." />
+    <meta name="theme-color" content="#14306b" />
+    <title>Afghan Future Hope Platform</title>
+    <base href="/" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;700&family=Noto+Naskh+Arabic:wght@400;700&display=swap" rel="stylesheet" />
+    <link href="css/app.css" rel="stylesheet" />
+    <script>
+        // Small JS bridge used by C# through IJSRuntime (storage, theme, language/direction).
+        window.afh = {
+            get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+            set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) { } },
+            prefersDark: function () { return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches; },
+            applyPrefs: function (theme, lang, dir) {
+                var root = document.documentElement;
+                root.setAttribute('data-theme', theme);
+                root.setAttribute('lang', lang);
+                root.setAttribute('dir', dir);
+            }
+        };
+        // Apply saved theme before Blazor starts to avoid a flash of the wrong theme.
+        (function () {
+            try {
+                var t = JSON.parse(localStorage.getItem('afh.theme'));
+                if (t) document.documentElement.setAttribute('data-theme', t);
+            } catch (e) { }
+        })();
+    </script>
+</head>
+<body>
+    <div id="app">
+        <div class="boot" aria-label="Loading"><div class="spinner"></div></div>
+    </div>
+    <div id="blazor-error-ui">
+        An unexpected error occurred. Your saved data is safe.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss" role="button" aria-label="Dismiss">✕</a>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+</html>

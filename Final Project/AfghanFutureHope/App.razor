@@ -1,0 +1,16 @@
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Page not found</PageTitle>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <section class="container narrow center empty-state">
+                <h1>We could not find that page</h1>
+                <p class="muted">The link may be old or mistyped. Go back to the home page to keep exploring.</p>
+                <a class="btn btn-primary" href="">Back to home</a>
+            </section>
+        </LayoutView>
+    </NotFound>
+</Router>

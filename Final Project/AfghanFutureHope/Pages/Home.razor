@@ -1,0 +1,80 @@
+@page "/"
+@inject IDataService Data
+@inject AppState State
+@inject NavigationManager Nav
+
+<PageTitle>Afghan Future Hope Platform</PageTitle>
+
+<section class="hero">
+    <svg class="hero-art" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
+        <circle class="sun" cx="860" cy="250" r="120" />
+        <path class="ridge r3" d="M0 420V300l90-60 80 40 120-90 110 80 100-50 130 90 120-120 150 110 100-60 100 70 100-40V420Z" />
+        <path class="ridge r2" d="M0 420V340l120-50 100 40 140-70 130 80 150-60 120 70 140-90 150 100 150-50V420Z" />
+        <path class="ridge r1" d="M0 420V380l140-30 160 30 170-50 190 50 160-30 180 40 200-30V420Z" />
+    </svg>
+    <div class="container hero-inner">
+        <h1>@State.T("hero.title")</h1>
+        <p class="lead">@State.T("hero.sub")</p>
+        <div class="row">
+            <a class="btn btn-sun" href="initiatives">@State.T("hero.cta1")</a>
+            <a class="btn btn-outline-light" href="opportunities">@State.T("hero.cta2")</a>
+        </div>
+    </div>
+</section>
+
+<section class="container stats" aria-label="Impact so far">
+    <StatCard Icon="💛" Value="@("$" + Data.TotalRaised.ToString("N0"))" Label="raised so far" />
+    <StatCard Icon="👥" Value="@Data.TotalBeneficiaries.ToString("N0")" Label="people reached" />
+    <StatCard Icon="🏫" Value="@Data.Initiatives.Count.ToString()" Label="active initiatives" />
+    <StatCard Icon="🤝" Value="@((Data.Donations.Count + 1240).ToString("N0"))" Label="supporters" />
+</section>
+
+<section class="container section">
+    <div class="section-head">
+        <h2>Initiatives that need you now</h2>
+        <a href="initiatives">See all initiatives</a>
+    </div>
+    <TemplatedList Items="Data.Initiatives.Where(i => i.Featured)">
+        <ItemTemplate Context="item">
+            <InitiativeCard Item="item" OnSupport="GoToSupport" />
+        </ItemTemplate>
+    </TemplatedList>
+</section>
+
+<section class="band">
+    <div class="container section">
+        <h2>How it works</h2>
+        <ol class="steps">
+            <li><h3>Choose</h3><p>Browse initiatives by province and cause, or search for a scholarship or job.</p></li>
+            <li><h3>Give or apply</h3><p>Donate any amount in a minute, or send an application with a short statement.</p></li>
+            <li><h3>Follow the impact</h3><p>Funding bars update as supporters give, so you can see progress as it happens.</p></li>
+        </ol>
+    </div>
+</section>
+
+<section class="container section">
+    <div class="section-head">
+        <h2>Voices from the field</h2>
+        <a href="stories">Read more stories</a>
+    </div>
+    <TemplatedList Items="Data.Stories.Take(3)" CssClass="grid quotes">
+        <ItemTemplate Context="s">
+            <blockquote class="quote">
+                <p>@s.Quote</p>
+                <footer><strong>@s.Name</strong>, @s.Role in @s.Province</footer>
+            </blockquote>
+        </ItemTemplate>
+    </TemplatedList>
+</section>
+
+<section class="container section">
+    <div class="cta-panel">
+        <h2>Start with one small gift or one application.</h2>
+        <p>Whatever you choose, it reaches a real classroom, clinic or workshop.</p>
+        <a class="btn btn-sun" href="initiatives">Choose an initiative</a>
+    </div>
+</section>
+
+@code {
+    private void GoToSupport(Initiative item) => Nav.NavigateTo($"initiatives/{item.Id}#donate");
+}
